@@ -11,16 +11,13 @@ Collection of :mod:`repoze.who` friendly form plugins
 
 .. topic:: Overview
 
-    TODO
+    **repoze.who-friendlyform** is a :mod:`repoze.who` plugin which provides
+    a collection of developer-friendly form plugins, although for the time
+    being such a collection has only one item.
 
-
-Tutorial
-========
-
-TODO
 
 How to install
---------------
+==============
 
 The minimum requirement is :mod:`repoze.who`, and you can install both with
 ``easy_install``::
@@ -28,16 +25,11 @@ The minimum requirement is :mod:`repoze.who`, and you can install both with
     easy_install repoze.who-friendlyform
 
 
-Using :class:`FriendlyFormPlugin`
----------------------------------
-
-TODO
-
-
-API
-===
+Available form plugins
+======================
 
 .. autoclass:: FriendlyFormPlugin
+    :members: __init__
 
 
 Support and development

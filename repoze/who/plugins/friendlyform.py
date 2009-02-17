@@ -35,10 +35,12 @@ __all__ = ['FriendlyFormPlugin']
 
 class FriendlyFormPlugin(object):
     """
-    Make the :class:`RedirectingFormPlugin 
-    <repoze.who.plugins.form.RedirectingFormPlugin>` friendlier.
+    :class:`RedirectingFormPlugin 
+    <repoze.who.plugins.form.RedirectingFormPlugin>`-like form plugin with
+    more features.
     
-    It makes ``RedirectingFormPlugin`` friendlier in the following aspects:
+    It is like ``RedirectingFormPlugin``, but provides us with the following
+    features:
     
     * Users are not challenged on logout, unless the referrer URL is a
       private one (but that's up to the application).
@@ -59,7 +61,26 @@ class FriendlyFormPlugin(object):
                  logout_handler_path, post_logout_url, rememberer_name,
                  login_counter_name='__logins'):
         """
-        Setup the friendly ``RedirectingFormPlugin``.
+        
+        :param login_form_url: The URL/path where the login form is located.
+        :type login_form_url: str
+        :param login_handler_path: The URL/path where the login form is
+            submitted to (where it is processed by this plugin).
+        :type login_handler_path: str
+        :param post_login_url: The URL/path where the user should be redirected
+            to after login (even if wrong credentials were provided).
+        :type post_login_url: str
+        :param logout_handler_path: The URL/path where the user is logged out.
+        :type logout_handler_path: str
+        :param post_logout_url: The URL/path where the user should be
+            redirected to after logout.
+        :type post_logout_url: str
+        :param rememberer_name: The name of the repoze.who identifier which
+            acts as rememberer.
+        :type rememberer_name: str
+        :param login_counter_name: The name of the query string variable which
+            will represent the login counter.
+        :type login_counter_name: str
         
         """
         self.login_form_url = login_form_url
