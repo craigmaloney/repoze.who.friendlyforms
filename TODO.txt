@@ -1,0 +1,6 @@
+* Write a function to instantiate FriendlyFormPlugin from a Paste Deploy
+  config file.
+* Write a FriendlyFormPlugin-based form which only uses post-login and
+  post-logout pages, and doesn't use the __logins query string argument.
+* Add the ability for FriendlyFormPlugin to use cookies instead of the
+  "came_from" and "__logins" arguments (http://bugs.repoze.org/issue59).
