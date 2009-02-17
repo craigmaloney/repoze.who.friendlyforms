@@ -18,7 +18,9 @@
 from unittest import TestCase
 from urllib import quote as original_quoter
 
+from zope.interface.verify import verifyClass
 from paste.httpexceptions import HTTPFound
+from repoze.who.interfaces import IIdentifier, IChallenger
 
 from repoze.who.plugins.friendlyform import FriendlyFormPlugin
 
@@ -27,12 +29,20 @@ quote = lambda txt: original_quoter(txt, '')
 
 
 class TestFriendlyFormPlugin(TestCase):
+
+    def test_implements(self):
+        verifyClass(IIdentifier, FriendlyFormPlugin)
+        verifyClass(IChallenger, FriendlyFormPlugin)
     
     def test_constructor(self):
         p = self._make_one()
         self.assertEqual(p.login_counter_name, '__logins')
         self.assertEqual(p.post_login_url, None)
         self.assertEqual(p.post_logout_url, None)
+    
+    def test_repr(self):
+        p = self._make_one()
+        self.assertEqual(repr(p), '<FriendlyFormPlugin %s>' % id(p))
     
     def test_login_without_postlogin_page(self):
         """
@@ -354,17 +364,252 @@ class TestFriendlyFormPlugin(TestCase):
         came_from = 'http://example.org/somewhere'
         redirect = '/login?came_from=%s' % quote(came_from)
         self.assertEqual(app.location(), redirect)
+
+    def test_identify_pathinfo_miss(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/not_login_handler')
+        result = plugin.identify(environ)
+        self.assertEqual(result, None)
+        self.failIf(environ.get('repoze.who.application'))
+
+    def test_identify_via_login_handler(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/login_handler',
+                                        login='chris',
+                                        password='password',
+                                        came_from='http://example.com/')
+        result = plugin.identify(environ)
+        self.assertEqual(result, {'login':'chris', 'password':'password'})
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 1)
+        name, value = app.headers[0]
+        self.assertEqual(name, 'location')
+        self.assertEqual(value, 'http://example.com/?__logins=0')
+        self.assertEqual(app.code, 302)
+
+    def test_identify_via_login_handler_no_username_pass(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/login_handler')
+        result = plugin.identify(environ)
+        self.assertEqual(result, None)
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 1)
+        name, value = app.headers[0]
+        self.assertEqual(name, 'location')
+        self.assertEqual(value, '/?__logins=0')
+        self.assertEqual(app.code, 302)
+
+    def test_identify_via_login_handler_no_came_from_no_http_referer(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/login_handler',
+                                        login='chris',
+                                        password='password')
+        result = plugin.identify(environ)
+        self.assertEqual(result, {'login':'chris', 'password':'password'})
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 1)
+        name, value = app.headers[0]
+        self.assertEqual(name, 'location')
+        self.assertEqual(value, '/?__logins=0')
+        self.assertEqual(app.code, 302)
+
+    def test_identify_via_login_handler_no_came_from(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/login_handler',
+                                        login='chris',
+                                        password='password')
+        environ['HTTP_REFERER'] = 'http://foo.bar/'
+        result = plugin.identify(environ)
+        self.assertEqual(result, {'login':'chris', 'password':'password'})
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 1)
+        name, value = app.headers[0]
+        self.assertEqual(name, 'location')
+        self.assertEqual(value, 'http://foo.bar/?__logins=0')
+        self.assertEqual(app.code, 302)
+
+    def test_identify_via_login_handler_no_came_from_no_referer_sname(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/login_handler',
+                                        script_name='/my-app',
+                                        login='chris',
+                                        password='password')
+        plugin.identify(environ)
+        app = environ['repoze.who.application']
+        self.assertEqual(app.location(), '/my-app?__logins=0')
+
+    def test_identify_via_logout_handler(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/logout_handler',
+                                        login='chris',
+                                        password='password',
+                                        came_from='http://example.com')
+        result = plugin.identify(environ)
+        self.assertEqual(result, None)
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 0)
+        self.assertEqual(app.code, 401)
+        self.assertEqual(environ['came_from'], 'http://example.com')
+
+    def test_identify_via_logout_handler_no_came_from_no_http_referer(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/logout_handler',
+                                        login='chris',
+                                        password='password')
+        result = plugin.identify(environ)
+        self.assertEqual(result, None)
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 0)
+        self.assertEqual(app.code, 401)
+        self.assertEqual(environ['came_from'], '/')
+
+    def test_identify_via_logout_handler_no_came_from_no_referer_spath(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/logout_handler',
+                                        script_name='/my-app',
+                                        login='chris',
+                                        password='password')
+        plugin.identify(environ)
+        app = environ['repoze.who.application']
+        self.assertEqual(environ['came_from'], '/my-app')
+
+    def test_identify_via_logout_handler_no_came_from(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron(path_info='/logout_handler',
+                                        login='chris',
+                                        password='password')
+        environ['HTTP_REFERER'] = 'http://example.com/referer'
+        result = plugin.identify(environ)
+        self.assertEqual(result, None)
+        app = environ['repoze.who.application']
+        self.assertEqual(len(app.headers), 0)
+        self.assertEqual(app.code, 401)
+        self.assertEqual(environ['came_from'], 'http://example.com/referer')
+
+    def test_remember(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron()
+        identity = {}
+        result = plugin.remember(environ, identity)
+        self.assertEqual(result, None)
+        self.assertEqual(environ['repoze.who.plugins']['cookie'].remembered,
+                         identity)
+
+    def test_forget(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron()
+        identity = {}
+        result = plugin.forget(environ, identity)
+        self.assertEqual(result, None)
+        self.assertEqual(environ['repoze.who.plugins']['cookie'].forgotten,
+                         identity
+                         )
+
+    def test_challenge(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron()
+        app = plugin.challenge(environ, '401 Unauthorized', [('app', '1')],
+                               [('forget', '1')])
+        sr = DummyStartResponse()
+        result = ''.join(app(environ, sr))
+        self.failUnless(result.startswith('302 Found'))
+        self.assertEqual(len(sr.headers), 3)
+        self.assertEqual(sr.headers[1][0], 'location')
+        url = sr.headers[1][1]
+        import urlparse
+        import cgi
+        parts = urlparse.urlparse(url)
+        parts_qsl = cgi.parse_qsl(parts[4])
+        self.assertEqual(len(parts_qsl), 1)
+        came_from_key, came_from_value = parts_qsl[0]
+        self.assertEqual(parts[0], 'http')
+        self.assertEqual(parts[1], 'example.com')
+        self.assertEqual(parts[2], '/login.html')
+        self.assertEqual(parts[3], '')
+        self.assertEqual(came_from_key, 'came_from')
+        self.assertEqual(came_from_value, 'http://www.example.com/?default=1')
+        headers = sr.headers
+        self.assertEqual(len(headers), 3)
+        self.assertEqual(sr.headers[0][0], 'forget')
+        self.assertEqual(sr.headers[0][1], '1')
+        self.assertEqual(sr.headers[2][0], 'content-type')
+        self.assertEqual(sr.headers[2][1], 'text/plain; charset=utf8')
+        self.assertEqual(sr.status, '302 Found')
+
+    def test_challenge_came_from_in_environ(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron()
+        environ['came_from'] = 'http://example.com/came_from'
+        app = plugin.challenge(environ, '401 Unauthorized', [('app', '1')],
+                               [('forget', '1')])
+        sr = DummyStartResponse()
+        result = ''.join(app(environ, sr))
+        self.failUnless(result.startswith('302 Found'))
+        self.assertEqual(len(sr.headers), 3)
+        self.assertEqual(sr.headers[1][0], 'location')
+        url = sr.headers[1][1]
+        import urlparse
+        import cgi
+        parts = urlparse.urlparse(url)
+        parts_qsl = cgi.parse_qsl(parts[4])
+        self.assertEqual(len(parts_qsl), 1)
+        came_from_key, came_from_value = parts_qsl[0]
+        self.assertEqual(parts[0], 'http')
+        self.assertEqual(parts[1], 'example.com')
+        self.assertEqual(parts[2], '/login.html')
+        self.assertEqual(parts[3], '')
+        self.assertEqual(came_from_key, 'came_from')
+        self.assertEqual(came_from_value, 'http://example.com/came_from')
+
+    def test_challenge_with_setcookie_from_app(self):
+        plugin = self._makeOne()
+        environ = self._makeFormEnviron()
+        app = plugin.challenge(
+            environ,
+            '401 Unauthorized',
+            [('app', '1'), ('set-cookie','a'), ('set-cookie','b')],
+            [])
+        sr = DummyStartResponse()
+        result = ''.join(app(environ, sr))
+        self.failUnless(result.startswith('302 Found'))
+        self.assertEqual(sr.headers[0][0], 'set-cookie')
+        self.assertEqual(sr.headers[0][1], 'a')
+        self.assertEqual(sr.headers[1][0], 'set-cookie')
+        self.assertEqual(sr.headers[1][1], 'b')
+        self.assertEqual(sr.headers[2][0], 'location')
+
+    def test_challenge_with_non_root_script_name(self):
+        """The script name must be taken into account while redirecting."""
+        plugin = self._makeOne(login_form_url='/login')
+        environ = self._makeFormEnviron(script_name='/app',
+                                        path_info='/admin')
+        came_from = 'http://www.example.com/app/admin?default=1'
+        environ['came_from'] = came_from
+        app = plugin.challenge(environ, '401 Unauthorized', [('app', '1')],
+                               [('forget', '1')])
+        from urllib import quote
+        login_url = '/app/login?came_from=%s' % quote(came_from, '')
+        self.assertEqual(app.location(), login_url)
     
-    def _make_one(self, login_counter_name=None, post_login_url=None,
+    def _make_one(self, login_counter_name='__logins', post_login_url=None,
                   post_logout_url=None):
-        p = FriendlyFormPlugin('/login', '/login_handler', '/logout_handler',
+        p = FriendlyFormPlugin('/login', '/login_handler', post_login_url,
+                               '/logout_handler', post_logout_url,
                                'whatever',
-                               login_counter_name=login_counter_name,
-                               post_login_url=post_login_url,
-                               post_logout_url=post_logout_url)
+                               login_counter_name=login_counter_name)
         return p
+
+    def _makeOne(self, login_form_url='http://example.com/login.html',
+                 login_handler_path = '/login_handler',
+                 logout_handler_path = '/logout_handler',
+                 rememberer_name='cookie'):
+        # TODO: Merge this into _make_one()
+        plugin = FriendlyFormPlugin(login_form_url, login_handler_path, None,
+                                    logout_handler_path, None, rememberer_name)
+        return plugin
     
     def _make_redirection(self, url):
+        # TODO: Remove this method
         app = HTTPFound(url)
         return app
     
@@ -378,6 +623,102 @@ class TestFriendlyFormPlugin(TestCase):
             'wsgi.input': '',
             'wsgi.url_scheme': 'http',
             }
+        # TODO: Remove the ``redirect`` param
         if redirect:
             environ['repoze.who.application'] = self._make_redirection(redirect)
         return environ
+    
+    def _makeEnviron(self, kw=None):
+        # TODO: Merge this into _make_environ
+        environ = {}
+        environ['wsgi.version'] = (1,0)
+        if kw is not None:
+            environ.update(kw)
+        return environ
+
+    def _makeFormEnviron(self, login=None, password=None, came_from=None,
+                         path_info='/', identifier=None, script_name=''):
+        # TODO: Merge this into _make_environ
+        from StringIO import StringIO
+        fields = []
+        if login:
+            fields.append(('login', login))
+        if password:
+            fields.append(('password', password))
+        if came_from:
+            fields.append(('came_from', came_from))
+        if identifier is None:
+            credentials = {'login':'chris', 'password':'password'}
+            identifier = DummyIdentifier(credentials)
+        content_type, body = encode_multipart_formdata(fields)
+        extra = {'wsgi.input':StringIO(body),
+                 'wsgi.url_scheme':'http',
+                 'SERVER_NAME':'www.example.com',
+                 'SERVER_PORT':'80',
+                 'CONTENT_TYPE':content_type,
+                 'CONTENT_LENGTH':len(body),
+                 'REQUEST_METHOD':'POST',
+                 'repoze.who.plugins': {'cookie':identifier},
+                 'QUERY_STRING':'default=1',
+                 'PATH_INFO':path_info,
+                 'SCRIPT_NAME':script_name
+                 }
+        environ = self._makeEnviron(extra)
+        return environ
+
+
+#{ Utilities
+
+
+def encode_multipart_formdata(fields):
+    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+    CRLF = '\r\n'
+    L = []
+    for (key, value) in fields:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"' % key)
+        L.append('')
+        L.append(value)
+    L.append('--' + BOUNDARY + '--')
+    L.append('')
+    body = CRLF.join(L)
+    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+    return content_type, body
+
+
+#{ Mock objects
+
+
+class DummyStartResponse:
+    def __call__(self, status, headers, exc_info=None):
+        self.status = status
+        self.headers = headers
+        self.exc_info = exc_info
+        return []
+
+
+class DummyIdentifier:
+    forgotten = False
+    remembered = False
+
+    def __init__(self, credentials=None, remember_headers=None,
+                 forget_headers=None, replace_app=None):
+        self.credentials = credentials
+        self.remember_headers = remember_headers
+        self.forget_headers = forget_headers
+        self.replace_app = replace_app
+
+    def identify(self, environ):
+        if self.replace_app:
+            environ['repoze.who.application'] = self.replace_app
+        return self.credentials
+
+    def forget(self, environ, identity):
+        self.forgotten = identity
+        return self.forget_headers
+
+    def remember(self, environ, identity):
+        self.remembered = identity
+        return self.remember_headers
+
+#}
