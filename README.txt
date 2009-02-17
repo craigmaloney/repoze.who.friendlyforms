@@ -2,4 +2,6 @@
 Collection of repoze.who friendly form plugins
 **********************************************
 
-TODO
+repoze.who-friendlyform is a repoze.who plugin which provides a collection of
+developer-friendly form plugins, although for the time being such a collection
+has only one item.
