@@ -59,7 +59,7 @@ class FriendlyFormPlugin(object):
     
     def __init__(self, login_form_url, login_handler_path, post_login_url,
                  logout_handler_path, post_logout_url, rememberer_name,
-                 login_counter_name='__logins'):
+                 login_counter_name=None):
         """
         
         :param login_form_url: The URL/path where the login form is located.
@@ -82,6 +82,9 @@ class FriendlyFormPlugin(object):
             will represent the login counter.
         :type login_counter_name: str
         
+        The login counter variable's name will be set to ``__logins`` if
+        ``login_counter_name`` equals None.
+        
         """
         self.login_form_url = login_form_url
         self.login_handler_path = login_handler_path
@@ -90,6 +93,8 @@ class FriendlyFormPlugin(object):
         self.post_logout_url = post_logout_url
         self.rememberer_name = rememberer_name
         self.login_counter_name = login_counter_name
+        if not login_counter_name:
+            self.login_counter_name = '__logins'
     
     # IIdentifier
     def identify(self, environ):

@@ -40,6 +40,10 @@ class TestFriendlyFormPlugin(TestCase):
         self.assertEqual(p.post_login_url, None)
         self.assertEqual(p.post_logout_url, None)
     
+    def test_constructor_with_loging_counter_as_None(self):
+        p = self._make_one(login_counter_name=None)
+        self.assertEqual(p.login_counter_name, '__logins')
+    
     def test_repr(self):
         p = self._make_one()
         self.assertEqual(repr(p), '<FriendlyFormPlugin %s>' % id(p))

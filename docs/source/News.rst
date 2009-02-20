@@ -5,6 +5,17 @@
 This document describes the releases of :mod:`repoze.who.plugins.friendlyform`.
 
 
+.. _1.0b2:
+
+**repoze.who-friendlyform** 1.0b2 (2009-02-20)
+==============================================
+
+* Forced the login counter name in the query string to be ``'__logins'`` even 
+  when ``login_counter_name`` is passed as ``None`` to
+  :meth:`repoze.who.plugins.friendlyform.FriendlyFormPlugin.__init__`. The
+  previous behavior was causing some weird problems on TG2 applications.
+
+
 .. _1.0b1:
 
 **repoze.who-friendlyform** 1.0b1 (2009-02-17)
