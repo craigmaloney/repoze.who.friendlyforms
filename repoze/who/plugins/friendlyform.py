@@ -27,8 +27,7 @@ from paste.request import construct_url, parse_dict_querystring, parse_formvars
 from paste.response import replace_header, header_value
 from zope.interface import implements
 
-from repoze.who.interfaces import IChallenger
-from repoze.who.interfaces import IIdentifier
+from repoze.who.interfaces import IChallenger, IIdentifier
 
 __all__ = ['FriendlyFormPlugin']
 
