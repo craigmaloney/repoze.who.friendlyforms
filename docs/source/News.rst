@@ -7,7 +7,7 @@ This document describes the releases of :mod:`repoze.who.plugins.friendlyform`.
 
 .. _1.0b3:
 
-Version 1.0b2 (2009-03-02)
+Version 1.0b3 (2009-03-02)
 ==========================
 * Renamed this project from ``repoze.who-friendlyform`` to
   :mod:`repoze.who.plugins.friendlyform` due to ugly problems with setuptools.
