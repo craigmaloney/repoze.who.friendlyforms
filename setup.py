@@ -23,7 +23,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 version = open(os.path.join(here, 'VERSION.txt')).readline().rstrip()
 
-setup(name='repoze.who.plugins.friendlyform',
+setup(name='repoze.who-friendlyform',
       version=version,
       description=('Collection of repoze.who friendly form plugins'),
       long_description=README,
@@ -41,7 +41,7 @@ setup(name='repoze.who.plugins.friendlyform',
       author='Gustavo Narea',
       author_email='repoze-dev@lists.repoze.org',
       namespace_packages = ['repoze', 'repoze.who', 'repoze.who.plugins'],
-      url='http://code.gustavonarea.net/repoze.who.plugins.friendlyform/',
+      url='http://code.gustavonarea.net/repoze.who-friendlyform/',
       license='BSD-derived (http://www.repoze.org/LICENSE.txt)',
       packages=find_packages(),
       include_package_data=True,
