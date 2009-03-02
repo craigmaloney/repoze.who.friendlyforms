@@ -11,9 +11,9 @@ Collection of :mod:`repoze.who` friendly form plugins
 
 .. topic:: Overview
 
-    **repoze.who-friendlyform** is a :mod:`repoze.who` plugin which provides
-    a collection of developer-friendly form plugins, although for the time
-    being such a collection has only one item.
+    **repoze.who.plugins.friendlyform** is a :mod:`repoze.who` plugin which 
+    provides a collection of developer-friendly form plugins, although for the
+    time being such a collection has only one item.
 
 
 How to install
@@ -22,7 +22,7 @@ How to install
 The minimum requirement is :mod:`repoze.who`, and you can install both with
 ``easy_install``::
     
-    easy_install repoze.who-friendlyform
+    easy_install repoze.who.plugins.friendlyform
 
 
 Available form plugins
