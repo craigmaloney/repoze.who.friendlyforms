@@ -22,9 +22,10 @@ try:
 except ImportError:#pragma: no cover
     from cgi import parse_qs
 
+from webob import Request
+# TODO: Stop using Paste; we already started using WebOb
 from paste.httpexceptions import HTTPFound, HTTPUnauthorized
 from paste.request import construct_url, parse_dict_querystring, parse_formvars
-from paste.response import replace_header, header_value
 from zope.interface import implements
 
 from repoze.who.interfaces import IChallenger, IIdentifier
@@ -103,24 +104,25 @@ class FriendlyFormPlugin(object):
         the ``environ``.
         
         """
+        request = Request(environ, charset="iso-8859-1")
         
         path_info = environ['PATH_INFO']
         script_name = environ.get('SCRIPT_NAME') or '/'
-        query = parse_dict_querystring(environ)
+        query = request.GET
         
         if path_info == self.login_handler_path:
             ## We are on the URL where repoze.who processes authentication. ##
             # Let's append the login counter to the query string of the
             # "came_from" URL. It will be used by the challenge below if
             # authorization is denied for this request.
-            form = parse_formvars(environ)
+            form = dict(request.POST)
             form.update(query)
             try:
                 login = form['login']
                 password = form['password']
                 credentials = {
-                    'login': form['login'],
-                    'password': form['password']
+                    'login': login,
+                    'password': password,
                     }
             except KeyError:
                 credentials = None

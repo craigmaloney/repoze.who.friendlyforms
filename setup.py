@@ -47,7 +47,7 @@ setup(name='repoze.who-friendlyform',
       include_package_data=True,
       zip_safe=False,
       tests_require=['repoze.who >= 1.0', 'coverage', 'nose'],
-      install_requires=['repoze.who >= 1.0', 'zope.interface'],
+      install_requires=['repoze.who >= 1.0', 'zope.interface', 'WebOb>=0.9.7'],
       test_suite='nose.collector',
       entry_points = """\
       """

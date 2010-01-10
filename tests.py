@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2009, Gustavo Narea <me@gustavonarea.net>.
+# Copyright (c) 2009-2010, Gustavo Narea <me@gustavonarea.net>.
 # All Rights Reserved.
 #
 # This software is subject to the provisions of the BSD-like license at
@@ -12,9 +12,8 @@
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-
 """Test suite for the collection of :mod:`repoze.who` friendly forms."""
-
+from StringIO import StringIO
 from unittest import TestCase
 from urllib import quote as original_quoter
 
@@ -403,6 +402,68 @@ class TestFriendlyFormPlugin(TestCase):
         self.assertEqual(value, '/?__logins=0')
         self.assertEqual(app.code, 302)
 
+    def test_identify_with_ascii_encoding(self):
+        plugin = self._makeOne()
+        # Testing with ASCII arguments:
+        environ_ascii = self._makeFormEnviron(
+            path_info="/login_handler",
+            login="gustavo",
+            password="pass",
+            charset="us-ascii")
+        result_ascii = plugin.identify(environ_ascii)
+        self.assertEqual(result_ascii, {'login': "gustavo", 'password': "pass"})
+        # Testing with UTF-8 arguments:
+        environ_utf = self._makeFormEnviron(
+            path_info="/login_handler",
+            login="mar%EDa",
+            password="ma%F1ana",
+            charset="us-ascii")
+        result_utf = plugin.identify(environ_utf)
+        self.assertEqual(result_utf, {'login': "maría", 'password': "mañana"})
+
+    def test_identify_with_unicode_encoding(self):
+        plugin = self._makeOne()
+        # Testing with ASCII arguments:
+        environ_ascii = self._makeFormEnviron(
+            path_info="/login_handler",
+            login="gustavo",
+            password="pass",
+            charset="utf-8")
+        result_ascii = plugin.identify(environ_ascii)
+        self.assertEqual(result_ascii,
+                         {'login': u"gustavo", 'password': u"pass"})
+        # Testing with UTF-8 arguments:
+        environ_utf = self._makeFormEnviron(
+            path_info="/login_handler",
+            # "maría" urlencoded with UTF-8:
+            login="mar%C3%ADa",
+            # "mañana" urlencoded with UTF-8:
+            password="ma%C3%B1ana",
+            charset="utf-8")
+        result_utf = plugin.identify(environ_utf)
+        self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
+
+    def test_identify_with_default_encoding(self):
+        """ISO-8859-1 must be assumed when no encoding is specified."""
+        plugin = self._makeOne()
+        # Testing with ASCII arguments:
+        environ_ascii = self._makeFormEnviron(
+            path_info="/login_handler",
+            login="gustavo",
+            password="pass")
+        result_ascii = plugin.identify(environ_ascii)
+        self.assertEqual(result_ascii,
+                         {'login': u"gustavo", 'password': u"pass"})
+        # Testing with UTF-8 arguments:
+        environ_utf = self._makeFormEnviron(
+            path_info="/login_handler",
+            # "maría" urlencoded with ISO-8859-1:
+            login="mar%EDa",
+            # "mañana" urlencoded with ISO-8859-1:
+            password="ma%F1ana")
+        result_utf = plugin.identify(environ_utf)
+        self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
+
     def test_identify_via_login_handler_no_came_from_no_http_referer(self):
         plugin = self._makeOne()
         environ = self._makeFormEnviron(path_info='/login_handler',
@@ -591,8 +652,8 @@ class TestFriendlyFormPlugin(TestCase):
         environ['came_from'] = came_from
         app = plugin.challenge(environ, '401 Unauthorized', [('app', '1')],
                                [('forget', '1')])
-        from urllib import quote
-        login_url = '/app/login?came_from=%s' % quote(came_from, '')
+
+        login_url = '/app/login?came_from=%s' % quote(came_from)
         self.assertEqual(app.location(), login_url)
     
     def _make_one(self, login_counter_name='__logins', post_login_url=None,
@@ -617,7 +678,8 @@ class TestFriendlyFormPlugin(TestCase):
         app = HTTPFound(url)
         return app
     
-    def _make_environ(self, path_info, qs='', SCRIPT_NAME='', redirect=None):
+    def _make_environ(self, path_info, qs='', SCRIPT_NAME='', redirect=None,
+                      charset=None):
         environ = {
             'PATH_INFO': path_info,
             'SCRIPT_NAME': SCRIPT_NAME,
@@ -626,6 +688,7 @@ class TestFriendlyFormPlugin(TestCase):
             'SERVER_PORT': '80',
             'wsgi.input': '',
             'wsgi.url_scheme': 'http',
+            'CONTENT_TYPE': "application/x-www-form-urlencoded",
             }
         # TODO: Remove the ``redirect`` param
         if redirect:
@@ -641,9 +704,9 @@ class TestFriendlyFormPlugin(TestCase):
         return environ
 
     def _makeFormEnviron(self, login=None, password=None, came_from=None,
-                         path_info='/', identifier=None, script_name=''):
+                         path_info='/', identifier=None, script_name='',
+                         charset=None):
         # TODO: Merge this into _make_environ
-        from StringIO import StringIO
         fields = []
         if login:
             fields.append(('login', login))
@@ -654,18 +717,18 @@ class TestFriendlyFormPlugin(TestCase):
         if identifier is None:
             credentials = {'login':'chris', 'password':'password'}
             identifier = DummyIdentifier(credentials)
-        content_type, body = encode_multipart_formdata(fields)
-        extra = {'wsgi.input':StringIO(body),
-                 'wsgi.url_scheme':'http',
-                 'SERVER_NAME':'www.example.com',
-                 'SERVER_PORT':'80',
-                 'CONTENT_TYPE':content_type,
-                 'CONTENT_LENGTH':len(body),
-                 'REQUEST_METHOD':'POST',
+        content_type, body = urlencode_formdata(fields, charset)
+        extra = {'wsgi.input': StringIO(body),
+                 'wsgi.url_scheme': 'http',
+                 'SERVER_NAME': 'www.example.com',
+                 'SERVER_PORT': '80',
+                 'CONTENT_TYPE': content_type,
+                 'CONTENT_LENGTH': len(body),
+                 'REQUEST_METHOD': 'POST',
                  'repoze.who.plugins': {'cookie':identifier},
-                 'QUERY_STRING':'default=1',
-                 'PATH_INFO':path_info,
-                 'SCRIPT_NAME':script_name
+                 'QUERY_STRING': 'default=1',
+                 'PATH_INFO': path_info,
+                 'SCRIPT_NAME': script_name
                  }
         environ = self._makeEnviron(extra)
         return environ
@@ -674,19 +737,16 @@ class TestFriendlyFormPlugin(TestCase):
 #{ Utilities
 
 
-def encode_multipart_formdata(fields):
-    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-    CRLF = '\r\n'
-    L = []
+def urlencode_formdata(fields, charset=None):
+    variables = []
     for (key, value) in fields:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"' % key)
-        L.append('')
-        L.append(value)
-    L.append('--' + BOUNDARY + '--')
-    L.append('')
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+        variables.append("%s=%s" % (quote(key), quote(value)))
+    body = "&".join(variables)
+    
+    content_type = "application/x-www-form-urlencoded"
+    if charset:
+        content_type += "; charset=%s" % charset
+    
     return content_type, body
 
 
