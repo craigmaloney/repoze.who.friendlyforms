@@ -19,7 +19,7 @@ from urlparse import urlparse, urlunparse
 from urllib import urlencode
 try:
     from urlparse import parse_qs
-except ImportError:
+except ImportError:#pragma: no cover
     from cgi import parse_qs
 
 from paste.httpexceptions import HTTPFound, HTTPUnauthorized
