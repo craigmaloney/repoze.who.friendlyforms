@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2009-2010, Gustavo Narea <me@gustavonarea.net>.
+# Copyright (c) 2009-2010, Gustavo Narea <me@gustavonarea.net> and contributors.
 # All Rights Reserved.
 #
 # This software is subject to the provisions of the BSD-like license at
@@ -412,14 +412,25 @@ class TestFriendlyFormPlugin(TestCase):
             charset="us-ascii")
         result_ascii = plugin.identify(environ_ascii)
         self.assertEqual(result_ascii, {'login': "gustavo", 'password': "pass"})
-        # Testing with UTF-8 arguments:
+        
+    def test_identify_with_cp1252_encoding(self):
+        plugin = self._makeOne()
+        # Testing with ASCII arguments:
+        environ_ascii = self._makeFormEnviron(
+            path_info="/login_handler",
+            login="gustavo",
+            password="pass",
+            charset="cp1252")
+        result_ascii = plugin.identify(environ_ascii)
+        self.assertEqual(result_ascii, {'login': "gustavo", 'password': "pass"})
+        # Testing with Latin-1 arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
-            login="mar%EDa",
-            password="ma%F1ana",
-            charset="us-ascii")
+            login=u"maría".encode('cp1252'),
+            password=u"mañana".encode('cp1252'),
+            charset="cp1252")
         result_utf = plugin.identify(environ_utf)
-        self.assertEqual(result_utf, {'login': "maría", 'password': "mañana"})
+        self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
 
     def test_identify_with_unicode_encoding(self):
         plugin = self._makeOne()
@@ -435,10 +446,8 @@ class TestFriendlyFormPlugin(TestCase):
         # Testing with UTF-8 arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
-            # "maría" urlencoded with UTF-8:
-            login="mar%C3%ADa",
-            # "mañana" urlencoded with UTF-8:
-            password="ma%C3%B1ana",
+            login="maría",
+            password="mañana",
             charset="utf-8")
         result_utf = plugin.identify(environ_utf)
         self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
@@ -454,13 +463,11 @@ class TestFriendlyFormPlugin(TestCase):
         result_ascii = plugin.identify(environ_ascii)
         self.assertEqual(result_ascii,
                          {'login': u"gustavo", 'password': u"pass"})
-        # Testing with UTF-8 arguments:
+        # Testing with default (Latin-1) encoded arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
-            # "maría" urlencoded with ISO-8859-1:
-            login="mar%EDa",
-            # "mañana" urlencoded with ISO-8859-1:
-            password="ma%F1ana")
+            login=u"maría".encode('latin-1'),
+            password=u"mañana".encode('latin-1'))
         result_utf = plugin.identify(environ_utf)
         self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2009-2010, Gustavo Narea <me@gustavonarea.net>.
+# Copyright (c) 2009-2010, Gustavo Narea <me@gustavonarea.net> and contributors.
 # All Rights Reserved.
 #
 # This software is subject to the provisions of the BSD-like license at
@@ -53,6 +53,9 @@ class FriendlyFormPlugin(object):
     You should keep in mind that if you're using a post-login or a post-logout
     page, that page will receive the referrer URL as a query string variable
     whose name is "came_from".
+    
+    Forms can be submitted with any encoding (non-ASCII credentials are
+    supported) and ISO-8859-1 (aka "Latin-1") is the default one.
     
     """
     implements(IChallenger, IIdentifier)
