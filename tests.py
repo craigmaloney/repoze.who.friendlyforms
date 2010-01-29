@@ -471,6 +471,17 @@ class TestFriendlyFormPlugin(TestCase):
         result_utf = plugin.identify(environ_utf)
         self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
 
+    def test_identify_with_custom_default_encoding(self):
+        """The default encoding can be overridden."""
+        plugin = self._makeOne(charset="utf-8")
+        # Testing with UTF-8 arguments:
+        environ_utf = self._makeFormEnviron(
+            path_info="/login_handler",
+            login=u"我不会说中文".encode("utf-8"),
+            password=u"你白痴".encode("utf-8"))
+        result_utf = plugin.identify(environ_utf)
+        self.assertEqual(result_utf, {'login': u"我不会说中文", 'password': u"你白痴"})
+
     def test_identify_via_login_handler_no_came_from_no_http_referer(self):
         plugin = self._makeOne()
         environ = self._makeFormEnviron(path_info='/login_handler',
@@ -674,10 +685,11 @@ class TestFriendlyFormPlugin(TestCase):
     def _makeOne(self, login_form_url='http://example.com/login.html',
                  login_handler_path = '/login_handler',
                  logout_handler_path = '/logout_handler',
-                 rememberer_name='cookie'):
+                 rememberer_name='cookie', charset="iso-8859-1"):
         # TODO: Merge this into _make_one()
         plugin = FriendlyFormPlugin(login_form_url, login_handler_path, None,
-                                    logout_handler_path, None, rememberer_name)
+                                    logout_handler_path, None, rememberer_name,
+                                    charset=charset)
         return plugin
     
     def _make_redirection(self, url):

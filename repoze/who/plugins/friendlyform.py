@@ -62,7 +62,7 @@ class FriendlyFormPlugin(object):
     
     def __init__(self, login_form_url, login_handler_path, post_login_url,
                  logout_handler_path, post_logout_url, rememberer_name,
-                 login_counter_name=None):
+                 login_counter_name=None, charset="iso-8859-1"):
         """
         
         :param login_form_url: The URL/path where the login form is located.
@@ -84,6 +84,9 @@ class FriendlyFormPlugin(object):
         :param login_counter_name: The name of the query string variable which
             will represent the login counter.
         :type login_counter_name: str
+        :param charset: The character encoding to be assumed when the user
+            agent does not submit the form with an explicit charset.
+        :type charset: :class:`str`
         
         The login counter variable's name will be set to ``__logins`` if
         ``login_counter_name`` equals None.
@@ -98,6 +101,7 @@ class FriendlyFormPlugin(object):
         self.login_counter_name = login_counter_name
         if not login_counter_name:
             self.login_counter_name = '__logins'
+        self.charset = charset
     
     # IIdentifier
     def identify(self, environ):
@@ -107,7 +111,7 @@ class FriendlyFormPlugin(object):
         the ``environ``.
         
         """
-        request = Request(environ, charset="iso-8859-1")
+        request = Request(environ, charset=self.charset)
         
         path_info = environ['PATH_INFO']
         script_name = environ.get('SCRIPT_NAME') or '/'
