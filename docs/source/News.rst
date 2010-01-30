@@ -4,6 +4,26 @@
 
 This document describes the releases of :mod:`repoze.who.plugins.friendlyform`.
 
+
+.. _1.0.1:
+
+Version 1.0.1 (2010-01-29)
+==========================
+
+Added the ability to set another default character encoding for the credentials
+in :class:`~repoze.who.plugins.friendlyform.FriendlyFormPlugin`.
+
+Although ISO-8859-1 (aka "Latin-1") is the official default charset according to
+the HTTP 1.1 specification (the one to be used when no encoding is explicitly
+mentioned in the request), browsers (e.g., Firefox) don't set it even when
+they use other encodings like UTF-8.
+
+So, if you use a charset other than Latin-1, you should let the plugin know.
+
+This has been `reported by Christoph Zwerschke
+<http://trac.turbogears.org/ticket/2438#comment:6>`_.
+
+
 .. _1.0:
 
 Version 1.0 Final (2010-01-28)

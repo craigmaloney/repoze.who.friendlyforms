@@ -91,6 +91,9 @@ class FriendlyFormPlugin(object):
         The login counter variable's name will be set to ``__logins`` if
         ``login_counter_name`` equals None.
         
+        .. versionchanged:: 1.0.1
+            Added the ``charset`` argument.
+        
         """
         self.login_form_url = login_form_url
         self.login_handler_path = login_handler_path
