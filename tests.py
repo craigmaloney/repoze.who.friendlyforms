@@ -412,6 +412,10 @@ class TestFriendlyFormPlugin(TestCase):
             charset="us-ascii")
         result_ascii = plugin.identify(environ_ascii)
         self.assertEqual(result_ascii, {'login': "gustavo", 'password': "pass"})
+        # Making sure the string sub-type is correct, to avoid getting
+        # SQLAlchemy wanrings:
+        self.assertEqual(type(result_ascii['login']), str)
+        self.assertEqual(type(result_ascii['password']), str)
         
     def test_identify_with_cp1252_encoding(self):
         plugin = self._makeOne()
@@ -451,6 +455,10 @@ class TestFriendlyFormPlugin(TestCase):
             charset="utf-8")
         result_utf = plugin.identify(environ_utf)
         self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
+        # Making sure the string sub-type is correct, to avoid getting
+        # SQLAlchemy wanrings:
+        self.assertEqual(type(result_utf['login']), unicode)
+        self.assertEqual(type(result_utf['password']), unicode)
 
     def test_identify_with_default_encoding(self):
         """ISO-8859-1 must be assumed when no encoding is specified."""

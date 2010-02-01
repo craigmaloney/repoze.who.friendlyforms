@@ -130,12 +130,18 @@ class FriendlyFormPlugin(object):
             try:
                 login = form['login']
                 password = form['password']
+            except KeyError:
+                credentials = None
+            else:
                 credentials = {
                     'login': login,
                     'password': password,
                     }
-            except KeyError:
-                credentials = None
+            
+            if request.charset == "us-ascii":
+                credentials['login'] = str(credentials['login'])
+                credentials['password'] = str(credentials['password'])
+            
             referer = environ.get('HTTP_REFERER', script_name)
             destination = form.get('came_from', referer)
             
