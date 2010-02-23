@@ -228,7 +228,7 @@ class FriendlyFormPlugin(object):
             destination = self._set_logins_in_url(destination,
                                                   environ['repoze.who.logins'])
 
-        return HTTPFound(destination, headers=headers)
+        return HTTPFound(location=destination, headers=headers)
 
     # IIdentifier
     def remember(self, environ, identity):
