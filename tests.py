@@ -63,7 +63,7 @@ class TestFriendlyFormPlugin(TestCase):
         p.identify(environ)
         app = environ['repoze.who.application']
         new_redirect = came_from + '?__logins=0'
-        self.assertEqual(app.location(), new_redirect)
+        self.assertEqual(app.location, new_redirect)
     
     def test_post_login_page_as_url(self):
         """Post-logout pages can also be defined as URLs, not only paths"""
@@ -75,7 +75,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         p.identify(environ)
         app = environ['repoze.who.application']
-        self.assertEqual(app.location(), login_url + '?__logins=0')
+        self.assertEqual(app.location, login_url + '?__logins=0')
     
     def test_post_login_page_with_SCRIPT_NAME(self):
         """
@@ -90,7 +90,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         p.identify(environ)
         app = environ['repoze.who.application']
-        self.assertEqual(app.location(), '/my-app/welcome_back?__logins=0')
+        self.assertEqual(app.location, '/my-app/welcome_back?__logins=0')
     
     def test_post_login_page_with_SCRIPT_NAME_and_came_from(self):
         """
@@ -109,7 +109,7 @@ class TestFriendlyFormPlugin(TestCase):
         p.identify(environ)
         app = environ['repoze.who.application']
         redirect = '/my-app/welcome_back?__logins=0&came_from=%s'
-        self.assertEqual(app.location(), redirect % quote(came_from))
+        self.assertEqual(app.location, redirect % quote(came_from))
     
     def test_post_login_page_without_login_counter(self):
         """
@@ -124,7 +124,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         p.identify(environ)
         app = environ['repoze.who.application']
-        self.assertEqual(app.location(), '/welcome_back?__logins=0')
+        self.assertEqual(app.location, '/welcome_back?__logins=0')
     
     def test_post_login_page_with_login_counter(self):
         """
@@ -140,7 +140,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         p.identify(environ)
         app = environ['repoze.who.application']
-        self.assertEqual(app.location(), '/welcome_back?__logins=2')
+        self.assertEqual(app.location, '/welcome_back?__logins=2')
     
     def test_post_login_page_with_invalid_login_counter(self):
         """
@@ -156,7 +156,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         p.identify(environ)
         app = environ['repoze.who.application']
-        self.assertEqual(app.location(), '/welcome_back?__logins=0')
+        self.assertEqual(app.location, '/welcome_back?__logins=0')
     
     def test_post_login_page_with_referrer(self):
         """
@@ -178,7 +178,7 @@ class TestFriendlyFormPlugin(TestCase):
         p.identify(environ)
         app = environ['repoze.who.application']
         new_url = '/welcome_back?__logins=3&came_from=%s' % came_from
-        self.assertEqual(app.location(), new_url)
+        self.assertEqual(app.location, new_url)
     
     def test_login_page_with_login_counter(self):
         """
@@ -244,7 +244,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
-        self.assertEqual(app.location(), '/')
+        self.assertEqual(app.location, '/')
     
     def test_logout_with_SCRIPT_NAME_and_without_post_logout_page(self):
         """
@@ -259,7 +259,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
-        self.assertEqual(app.location(), '/my-app')
+        self.assertEqual(app.location, '/my-app')
     
     def test_logout_with_camefrom_and_without_post_logout_page(self):
         """
@@ -275,7 +275,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
-        self.assertEqual(app.location(), '/somewhere')
+        self.assertEqual(app.location, '/somewhere')
     
     def test_logout_with_post_logout_page(self):
         """Users must be redirected to the post-logout page, if defined"""
@@ -286,7 +286,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
-        self.assertEqual(app.location(), '/see_you_later')
+        self.assertEqual(app.location, '/see_you_later')
     
     def test_logout_with_post_logout_page_as_url(self):
         """Post-logout pages can also be defined as URLs, not only paths"""
@@ -298,7 +298,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
-        self.assertEqual(app.location(), logout_url)
+        self.assertEqual(app.location, logout_url)
     
     def test_logout_with_post_logout_page_and_SCRIPT_NAME(self):
         """
@@ -313,7 +313,7 @@ class TestFriendlyFormPlugin(TestCase):
         # --- Testing it:
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
-        self.assertEqual(app.location(), '/my-app/see_you_later')
+        self.assertEqual(app.location, '/my-app/see_you_later')
     
     def test_logout_with_post_logout_page_and_came_from(self):
         """
@@ -331,7 +331,7 @@ class TestFriendlyFormPlugin(TestCase):
         app = p.challenge(environ, '401 Unauthorized', [('app', '1')],
                           [('forget', '1')])
         redirect = '/see_you_later?came_from=%s'
-        self.assertEqual(app.location(), redirect % quote(came_from))
+        self.assertEqual(app.location, redirect % quote(came_from))
     
     def test_failed_login(self):
         """
@@ -349,7 +349,7 @@ class TestFriendlyFormPlugin(TestCase):
                           [('forget', '1')])
         came_from = 'http://example.org/somewhere'
         redirect = '/login?__logins=2&came_from=%s' % quote(came_from)
-        self.assertEqual(app.location(), redirect)
+        self.assertEqual(app.location, redirect)
     
     def test_not_logout_and_not_failed_logins(self):
         """
@@ -366,7 +366,7 @@ class TestFriendlyFormPlugin(TestCase):
                           [('forget', '1')])
         came_from = 'http://example.org/somewhere'
         redirect = '/login?came_from=%s' % quote(came_from)
-        self.assertEqual(app.location(), redirect)
+        self.assertEqual(app.location, redirect)
 
     def test_identify_pathinfo_miss(self):
         plugin = self._makeOne()
@@ -384,10 +384,12 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, {'login':'chris', 'password':'password'})
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 1)
-        name, value = app.headers[0]
-        self.assertEqual(name, 'location')
-        self.assertEqual(value, 'http://example.com/?__logins=0')
+        self.assertEqual(len(app.headers), 3)
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
+        self.assert_("Location" in app.headers)
+        self.assertEqual(app.headers['Location'],
+                         'http://example.com/?__logins=0')
         self.assertEqual(app.code, 302)
 
     def test_identify_via_login_handler_no_username_pass(self):
@@ -396,10 +398,10 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, None)
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 1)
-        name, value = app.headers[0]
-        self.assertEqual(name, 'location')
-        self.assertEqual(value, '/?__logins=0')
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
+        self.assert_("Location" in app.headers)
+        self.assertEqual(app.headers['Location'], '/?__logins=0')
         self.assertEqual(app.code, 302)
 
     def test_identify_with_ascii_encoding(self):
@@ -498,10 +500,10 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, {'login':'chris', 'password':'password'})
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 1)
-        name, value = app.headers[0]
-        self.assertEqual(name, 'location')
-        self.assertEqual(value, '/?__logins=0')
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
+        self.assert_("Location" in app.headers)
+        self.assertEqual(app.headers['Location'], '/?__logins=0')
         self.assertEqual(app.code, 302)
 
     def test_identify_via_login_handler_no_came_from(self):
@@ -513,10 +515,11 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, {'login':'chris', 'password':'password'})
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 1)
-        name, value = app.headers[0]
-        self.assertEqual(name, 'location')
-        self.assertEqual(value, 'http://foo.bar/?__logins=0')
+        self.assertEqual(len(app.headers), 3)
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
+        self.assert_("Location" in app.headers)
+        self.assertEqual(app.headers['Location'], 'http://foo.bar/?__logins=0')
         self.assertEqual(app.code, 302)
 
     def test_identify_via_login_handler_no_came_from_no_referer_sname(self):
@@ -527,7 +530,7 @@ class TestFriendlyFormPlugin(TestCase):
                                         password='password')
         plugin.identify(environ)
         app = environ['repoze.who.application']
-        self.assertEqual(app.location(), '/my-app?__logins=0')
+        self.assertEqual(app.location, '/my-app?__logins=0')
 
     def test_identify_via_logout_handler(self):
         plugin = self._makeOne()
@@ -538,7 +541,9 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, None)
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 0)
+        self.assertEqual(len(app.headers), 2)
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
         self.assertEqual(app.code, 401)
         self.assertEqual(environ['came_from'], 'http://example.com')
 
@@ -550,7 +555,9 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, None)
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 0)
+        self.assertEqual(len(app.headers), 2)
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
         self.assertEqual(app.code, 401)
         self.assertEqual(environ['came_from'], '/')
 
@@ -561,7 +568,7 @@ class TestFriendlyFormPlugin(TestCase):
                                         login='chris',
                                         password='password')
         plugin.identify(environ)
-        app = environ['repoze.who.application']
+        environ['repoze.who.application']
         self.assertEqual(environ['came_from'], '/my-app')
 
     def test_identify_via_logout_handler_no_came_from(self):
@@ -573,7 +580,9 @@ class TestFriendlyFormPlugin(TestCase):
         result = plugin.identify(environ)
         self.assertEqual(result, None)
         app = environ['repoze.who.application']
-        self.assertEqual(len(app.headers), 0)
+        self.assertEqual(len(app.headers), 2)
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
         self.assertEqual(app.code, 401)
         self.assertEqual(environ['came_from'], 'http://example.com/referer')
 
@@ -604,9 +613,10 @@ class TestFriendlyFormPlugin(TestCase):
         sr = DummyStartResponse()
         result = ''.join(app(environ, sr))
         self.failUnless(result.startswith('302 Found'))
-        self.assertEqual(len(sr.headers), 3)
-        self.assertEqual(sr.headers[1][0], 'location')
-        url = sr.headers[1][1]
+        self.assertEqual(len(sr.headers), 4)
+        self.assertEqual(sr.headers[1][0], 'forget')
+        self.assertEqual(sr.headers[2][0], 'Location')
+        url = sr.headers[2][1]
         import urlparse
         import cgi
         parts = urlparse.urlparse(url)
@@ -620,11 +630,11 @@ class TestFriendlyFormPlugin(TestCase):
         self.assertEqual(came_from_key, 'came_from')
         self.assertEqual(came_from_value, 'http://www.example.com/?default=1')
         headers = sr.headers
-        self.assertEqual(len(headers), 3)
-        self.assertEqual(sr.headers[0][0], 'forget')
-        self.assertEqual(sr.headers[0][1], '1')
-        self.assertEqual(sr.headers[2][0], 'content-type')
-        self.assertEqual(sr.headers[2][1], 'text/plain; charset=utf8')
+        self.assertEqual(len(headers), 4)
+        self.assertEqual(sr.headers[0][0], 'Content-Type')
+        self.assertEqual(sr.headers[0][1], 'text/html; charset=UTF-8')
+        self.assertEqual(sr.headers[1][0], 'forget')
+        self.assertEqual(sr.headers[1][1], '1')
         self.assertEqual(sr.status, '302 Found')
 
     def test_challenge_came_from_in_environ(self):
@@ -636,9 +646,10 @@ class TestFriendlyFormPlugin(TestCase):
         sr = DummyStartResponse()
         result = ''.join(app(environ, sr))
         self.failUnless(result.startswith('302 Found'))
-        self.assertEqual(len(sr.headers), 3)
-        self.assertEqual(sr.headers[1][0], 'location')
-        url = sr.headers[1][1]
+        self.assertEqual(len(sr.headers), 4)
+        self.assertEqual(sr.headers[1][0], 'forget')
+        self.assertEqual(sr.headers[2][0], 'Location')
+        url = sr.headers[2][1]
         import urlparse
         import cgi
         parts = urlparse.urlparse(url)
@@ -663,11 +674,16 @@ class TestFriendlyFormPlugin(TestCase):
         sr = DummyStartResponse()
         result = ''.join(app(environ, sr))
         self.failUnless(result.startswith('302 Found'))
-        self.assertEqual(sr.headers[0][0], 'set-cookie')
-        self.assertEqual(sr.headers[0][1], 'a')
+        self.assertEqual(sr.headers[0][0], 'Content-Type')
+        self.assertEqual(sr.headers[0][1], 'text/html; charset=UTF-8')
         self.assertEqual(sr.headers[1][0], 'set-cookie')
-        self.assertEqual(sr.headers[1][1], 'b')
-        self.assertEqual(sr.headers[2][0], 'location')
+        self.assertEqual(sr.headers[1][1], 'a')
+        self.assertEqual(sr.headers[2][0], 'set-cookie')
+        self.assertEqual(sr.headers[2][1], 'b')
+        self.assertEqual(sr.headers[3][0], 'Location')
+        self.assertEqual(sr.headers[3][1],
+            "http://example.com/login.html?came_from=http%3A%2F%2Fwww.example."
+            "com%2F%3Fdefault%3D1")
 
     def test_challenge_with_non_root_script_name(self):
         """The script name must be taken into account while redirecting."""
@@ -680,7 +696,7 @@ class TestFriendlyFormPlugin(TestCase):
                                [('forget', '1')])
 
         login_url = '/app/login?came_from=%s' % quote(came_from)
-        self.assertEqual(app.location(), login_url)
+        self.assertEqual(app.location, login_url)
     
     def _make_one(self, login_counter_name='__logins', post_login_url=None,
                   post_logout_url=None):
