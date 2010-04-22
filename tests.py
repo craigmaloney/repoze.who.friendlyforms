@@ -411,13 +411,30 @@ class TestFriendlyFormPlugin(TestCase):
             path_info="/login_handler",
             login="gustavo",
             password="pass",
-            charset="us-ascii")
+            charset="us-ascii",
+            )
         result_ascii = plugin.identify(environ_ascii)
         self.assertEqual(result_ascii, {'login': "gustavo", 'password': "pass"})
         # Making sure the string sub-type is correct, to avoid getting
-        # SQLAlchemy wanrings:
+        # SQLAlchemy warnings:
         self.assertEqual(type(result_ascii['login']), str)
         self.assertEqual(type(result_ascii['password']), str)
+
+    def test_identify_with_ascii_encoding_and_no_credentials(self):
+        plugin = self._makeOne()
+        # Testing with ASCII arguments:
+        environ = self._makeFormEnviron(
+            path_info="/login_handler",
+            charset="us-ascii",
+            )
+        result = plugin.identify(environ)
+        self.assertEqual(result, None)
+        app = environ['repoze.who.application']
+        self.assert_("Content-Type" in app.headers)
+        self.assert_("Content-Length" in app.headers)
+        self.assert_("Location" in app.headers)
+        self.assertEqual(app.headers['Location'], '/?__logins=0')
+        self.assertEqual(app.code, 302)
         
     def test_identify_with_cp1252_encoding(self):
         plugin = self._makeOne()
