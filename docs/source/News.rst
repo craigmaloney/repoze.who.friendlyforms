@@ -7,11 +7,14 @@ This document describes the releases of :mod:`repoze.who.plugins.friendlyform`.
 
 .. _1.0.2:
 
-Version 1.0.2 (*unreleased*)
-============================
+Version 1.0.2 (2010-04-22)
+==========================
 
-Made the plugin return :class:`str` instead of :class:`unicode` when the request
-is made using ASCII.
+* Made the plugin return :class:`str` instead of :class:`unicode` when the request
+  is made using ASCII.
+* Added sample code to the documentation on how to use
+  :class:`~repoze.who.plugins.friendlyform.FriendlyFormPlugin`, as suggested by
+  Ian Stevens.
 
 
 .. _1.0.1:
