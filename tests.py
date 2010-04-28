@@ -43,6 +43,20 @@ class TestFriendlyFormPlugin(TestCase):
         p = self._make_one(login_counter_name=None)
         self.assertEqual(p.login_counter_name, '__logins')
     
+    def test_classification(self):
+        """FriendlyForm only participate when the UA is a browser."""
+        p = self._make_one(login_counter_name=None)
+        self.assertTrue(p.classifications)
+        self.assertEqual(2, len(p.classifications))
+        # It must only identify when the UA is a browser:
+        self.assertTrue(IIdentifier in p.classifications)
+        self.assertEqual(1, len(p.classifications[IIdentifier]))
+        self.assertEqual(p.classifications[IIdentifier][0], "browser")
+        # It must only challenge when the UA is a browser:
+        self.assertTrue(IChallenger in p.classifications)
+        self.assertEqual(1, len(p.classifications[IChallenger]))
+        self.assertEqual(p.classifications[IChallenger][0], "browser")
+    
     def test_repr(self):
         p = self._make_one()
         self.assertEqual(repr(p), '<FriendlyFormPlugin %s>' % id(p))

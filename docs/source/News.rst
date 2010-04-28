@@ -5,6 +5,15 @@
 This document describes the releases of :mod:`repoze.who.plugins.friendlyform`.
 
 
+.. _1.0.6:
+
+Version 1.0.6 (2010-04-28)
+==========================
+
+* Restricted the plugin to identify and challenge to browser requests only. So
+  it won't come into play if the client is a Subversion client, for example.
+
+
 .. _1.0.5:
 
 Version 1.0.5 (2010-04-22)
