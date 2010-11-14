@@ -59,12 +59,12 @@ class FriendlyFormPlugin(object):
 
     """
     implements(IChallenger, IIdentifier)
-    
+
     classifications = {
         IIdentifier: ["browser"],
         IChallenger: ["browser"],
         }
-    
+
     def __init__(self, login_form_url, login_handler_path, post_login_url,
                  logout_handler_path, post_logout_url, rememberer_name,
                  login_counter_name=None, charset="iso-8859-1"):
@@ -145,6 +145,11 @@ class FriendlyFormPlugin(object):
                         }
                 else:
                     credentials = {'login': login,'password': password}
+
+            try:
+                credentials['max_age'] = form['remember']
+            except KeyError:
+                pass
 
             referer = environ.get('HTTP_REFERER', script_name)
             destination = form.get('came_from', referer)
