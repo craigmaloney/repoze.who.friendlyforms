@@ -13,12 +13,23 @@
 #
 ##############################################################################
 """Test suite for the collection of :mod:`repoze.who` friendly forms."""
-from StringIO import StringIO
+from __future__ import unicode_literals
+
+from io import BytesIO
+
 from unittest import TestCase
-from urllib import quote as original_quoter
+
+try:
+    from urllib import quote as original_quoter
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import quote as original_quoter
+    from urllib.parse import urlparse
+
+import cgi
 
 from zope.interface.verify import verifyClass
-from paste.httpexceptions import HTTPFound
+from webob.exc import HTTPFound
 from repoze.who.interfaces import IIdentifier, IChallenger
 
 from repoze.who.plugins.friendlyform import FriendlyFormPlugin
@@ -26,6 +37,10 @@ from repoze.who.plugins.friendlyform import FriendlyFormPlugin
 # Let's prevent the original quote() from leaving slashes:
 quote = lambda txt: original_quoter(txt, '')
 
+try:
+    unicode_text = unicode
+except:
+    unicode_text = str
 
 class TestFriendlyFormPlugin(TestCase):
 
@@ -463,11 +478,11 @@ class TestFriendlyFormPlugin(TestCase):
         # Testing with Latin-1 arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
-            login=u"maría".encode('cp1252'),
-            password=u"mañana".encode('cp1252'),
+            login="maría".encode('cp1252'),
+            password="mañana".encode('cp1252'),
             charset="cp1252")
         result_utf = plugin.identify(environ_utf)
-        self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
+        self.assertEqual(result_utf, {'login': "maría", 'password': "mañana"})
 
     def test_identify_with_unicode_encoding(self):
         plugin = self._makeOne()
@@ -479,7 +494,7 @@ class TestFriendlyFormPlugin(TestCase):
             charset="utf-8")
         result_ascii = plugin.identify(environ_ascii)
         self.assertEqual(result_ascii,
-                         {'login': u"gustavo", 'password': u"pass"})
+                         {'login': "gustavo", 'password': "pass"})
         # Testing with UTF-8 arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
@@ -487,11 +502,11 @@ class TestFriendlyFormPlugin(TestCase):
             password="mañana",
             charset="utf-8")
         result_utf = plugin.identify(environ_utf)
-        self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
+        self.assertEqual(result_utf, {'login': "maría", 'password': "mañana"})
         # Making sure the string sub-type is correct, to avoid getting
         # SQLAlchemy wanrings:
-        self.assertEqual(type(result_utf['login']), unicode)
-        self.assertEqual(type(result_utf['password']), unicode)
+        self.assertEqual(type(result_utf['login']), unicode_text)
+        self.assertEqual(type(result_utf['password']), unicode_text)
 
     def test_identify_with_default_encoding(self):
         """ISO-8859-1 must be assumed when no encoding is specified."""
@@ -503,14 +518,14 @@ class TestFriendlyFormPlugin(TestCase):
             password="pass")
         result_ascii = plugin.identify(environ_ascii)
         self.assertEqual(result_ascii,
-                         {'login': u"gustavo", 'password': u"pass"})
+                         {'login': "gustavo", 'password': "pass"})
         # Testing with default (Latin-1) encoded arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
-            login=u"maría".encode('latin-1'),
-            password=u"mañana".encode('latin-1'))
+            login="maría".encode('latin-1'),
+            password="mañana".encode('latin-1'))
         result_utf = plugin.identify(environ_utf)
-        self.assertEqual(result_utf, {'login': u"maría", 'password': u"mañana"})
+        self.assertEqual(result_utf, {'login': "maría", 'password': "mañana"})
 
     def test_identify_with_custom_default_encoding(self):
         """The default encoding can be overridden."""
@@ -518,10 +533,10 @@ class TestFriendlyFormPlugin(TestCase):
         # Testing with UTF-8 arguments:
         environ_utf = self._makeFormEnviron(
             path_info="/login_handler",
-            login=u"我不会说中文".encode("utf-8"),
-            password=u"你白痴".encode("utf-8"))
+            login="我不会说中文".encode("utf-8"),
+            password="你白痴".encode("utf-8"))
         result_utf = plugin.identify(environ_utf)
-        self.assertEqual(result_utf, {'login': u"我不会说中文", 'password': u"你白痴"})
+        self.assertEqual(result_utf, {'login': "我不会说中文", 'password': "你白痴"})
 
     def test_identify_via_login_handler_no_came_from_no_http_referer(self):
         plugin = self._makeOne()
@@ -642,15 +657,13 @@ class TestFriendlyFormPlugin(TestCase):
         app = plugin.challenge(environ, '401 Unauthorized', [('app', '1')],
                                [('forget', '1')])
         sr = DummyStartResponse()
-        result = ''.join(app(environ, sr))
+        result = ''.join([s.decode('utf-8') for s in app(environ, sr)])
         self.failUnless(result.startswith('302 Found'))
-        self.assertEqual(len(sr.headers), 4)
-        self.assertEqual(sr.headers[1][0], 'forget')
-        self.assertEqual(sr.headers[2][0], 'Location')
-        url = sr.headers[2][1]
-        import urlparse
-        import cgi
-        parts = urlparse.urlparse(url)
+        headers_dict = dict(sr.headers)
+        self.assertEqual(len(headers_dict.keys()), 4)
+        assert 'Location' in headers_dict
+        assert 'forget' in headers_dict
+        parts = urlparse(headers_dict['Location'])
         parts_qsl = cgi.parse_qsl(parts[4])
         self.assertEqual(len(parts_qsl), 1)
         came_from_key, came_from_value = parts_qsl[0]
@@ -660,12 +673,9 @@ class TestFriendlyFormPlugin(TestCase):
         self.assertEqual(parts[3], '')
         self.assertEqual(came_from_key, 'came_from')
         self.assertEqual(came_from_value, 'http://www.example.com/?default=1')
-        headers = sr.headers
-        self.assertEqual(len(headers), 4)
-        self.assertEqual(sr.headers[0][0], 'Content-Type')
-        self.assertEqual(sr.headers[0][1], 'text/html; charset=UTF-8')
-        self.assertEqual(sr.headers[1][0], 'forget')
-        self.assertEqual(sr.headers[1][1], '1')
+
+        self.assertEqual(headers_dict['Content-Type'], 'text/plain; charset=UTF-8')
+        self.assertEqual(headers_dict['forget'], '1')
         self.assertEqual(sr.status, '302 Found')
 
     def test_challenge_came_from_in_environ(self):
@@ -675,15 +685,13 @@ class TestFriendlyFormPlugin(TestCase):
         app = plugin.challenge(environ, '401 Unauthorized', [('app', '1')],
                                [('forget', '1')])
         sr = DummyStartResponse()
-        result = ''.join(app(environ, sr))
+        result = ''.join([s.decode('utf-8') for s in app(environ, sr)])
         self.failUnless(result.startswith('302 Found'))
-        self.assertEqual(len(sr.headers), 4)
-        self.assertEqual(sr.headers[1][0], 'forget')
-        self.assertEqual(sr.headers[2][0], 'Location')
-        url = sr.headers[2][1]
-        import urlparse
-        import cgi
-        parts = urlparse.urlparse(url)
+        headers_dict = dict(sr.headers)
+        self.assertEqual(len(headers_dict.keys()), 4)
+        assert 'Location' in headers_dict
+        assert 'forget' in headers_dict
+        parts = urlparse(headers_dict['Location'])
         parts_qsl = cgi.parse_qsl(parts[4])
         self.assertEqual(len(parts_qsl), 1)
         came_from_key, came_from_value = parts_qsl[0]
@@ -703,18 +711,18 @@ class TestFriendlyFormPlugin(TestCase):
             [('app', '1'), ('set-cookie','a'), ('set-cookie','b')],
             [])
         sr = DummyStartResponse()
-        result = ''.join(app(environ, sr))
+        result = ''.join([s.decode('utf-8') for s in app(environ, sr)])
         self.failUnless(result.startswith('302 Found'))
-        self.assertEqual(sr.headers[0][0], 'Content-Type')
-        self.assertEqual(sr.headers[0][1], 'text/html; charset=UTF-8')
-        self.assertEqual(sr.headers[1][0], 'set-cookie')
-        self.assertEqual(sr.headers[1][1], 'a')
-        self.assertEqual(sr.headers[2][0], 'set-cookie')
-        self.assertEqual(sr.headers[2][1], 'b')
-        self.assertEqual(sr.headers[3][0], 'Location')
-        self.assertEqual(sr.headers[3][1],
+
+        headers_dict = dict(sr.headers)
+        self.assertEqual(headers_dict['Content-Type'], 'text/plain; charset=UTF-8')
+        self.assertEqual(headers_dict['Location'],
             "http://example.com/login.html?came_from=http%3A%2F%2Fwww.example."
             "com%2F%3Fdefault%3D1")
+
+        set_cookies = [h[1] for h in sr.headers if h[0] == 'set-cookie']
+        assert(len(set_cookies) == 2)
+        assert(sorted(set_cookies) == ['a', 'b'])
 
     def test_challenge_with_non_root_script_name(self):
         """The script name must be taken into account while redirecting."""
@@ -792,7 +800,7 @@ class TestFriendlyFormPlugin(TestCase):
             credentials = {'login':'chris', 'password':'password'}
             identifier = DummyIdentifier(credentials)
         content_type, body = urlencode_formdata(fields, charset)
-        extra = {'wsgi.input': StringIO(body),
+        extra = {'wsgi.input': BytesIO(body),
                  'wsgi.url_scheme': 'http',
                  'SERVER_NAME': 'www.example.com',
                  'SERVER_PORT': '80',
@@ -820,7 +828,11 @@ def urlencode_formdata(fields, charset=None):
     content_type = "application/x-www-form-urlencoded"
     if charset:
         content_type += "; charset=%s" % charset
-    
+
+    if charset is None:
+        charset = 'ascii'
+    body = body.encode(charset)
+
     return content_type, body
 
 
