@@ -125,7 +125,7 @@ class FriendlyFormPlugin(object):
 
         """
         request = Request(environ)
-        if 'charset' not in environ['CONTENT_TYPE']:
+        if 'charset' not in request.content_type:
             charset = self.charset
         else:
             charset = request.charset
