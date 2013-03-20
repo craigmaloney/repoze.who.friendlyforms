@@ -72,7 +72,8 @@ class FriendlyFormPlugin(object):
 
     def __init__(self, login_form_url, login_handler_path, post_login_url,
                  logout_handler_path, post_logout_url, rememberer_name,
-                 login_counter_name=None, charset="iso-8859-1"):
+                 login_counter_name=None, charset="iso-8859-1",
+                 query_strings=None):
         """
 
         :param login_form_url: The URL/path where the login form is located.
@@ -115,6 +116,7 @@ class FriendlyFormPlugin(object):
         if not login_counter_name:
             self.login_counter_name = '__logins'
         self.charset = charset
+        self.query_strings = query_strings
 
     # IIdentifier
     def identify(self, environ):
@@ -175,6 +177,15 @@ class FriendlyFormPlugin(object):
                     destination = self._insert_qs_variable(destination,
                                                            'came_from',
                                                            query['came_from'])
+
+                if self.query_strings:
+                    for query_string in self.query_strings:
+                        if query_string in form:
+                            destination = \
+                                self._insert_qs_variable(destination,
+                                                         query_string,
+                                                         form[query_string])
+
             failed_logins = self._get_logins(request, True)
             new_dest = self._set_logins_in_url(destination, failed_logins)
             environ['repoze.who.application'] = HTTPFound(location=new_dest)
